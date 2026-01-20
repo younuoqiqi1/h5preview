@@ -1,0 +1,5 @@
+{
+  "name": "H5预览",
+  "description": "A real-time HTML/CSS/JS previewer with multi-device simulation and AI code generation.",
+  "requestFramePermissions": []
+}
