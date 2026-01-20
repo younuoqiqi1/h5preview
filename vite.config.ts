@@ -10,16 +10,8 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
     },
     plugins: [
-      // 增强React编译，用Babel兜底转译（解决TSX/JSX语法问题）
-      react({
-        babel: {
-          presets: [
-            ['@babel/preset-env', { targets: '> 0.25%, not dead' }],
-            '@babel/preset-react',
-            '@babel/preset-typescript',
-          ],
-        },
-      }),
+      // 使用默认配置的React插件，足够处理TSX/JSX编译
+      react(),
       // 自动替换所有中文符号（彻底解决语法错误）
       {
         name: 'replace-chinese-symbols',

@@ -33,31 +33,7 @@
       ::-webkit-scrollbar-thumb { background: #475569; border-radius: 5px; }
       ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
-    <!-- 关键修复：1. 移除 importmap（用本地依赖打包，避免冲突） 2. 添加中文符号替换脚本 -->
-    <script>
-      // 页面加载前强制替换所有中文符号（解决 document.designMode = "on" 中文引号问题）
-      (function() {
-        // 重写 document.write，拦截所有注入的脚本并替换中文符号
-        const originalWrite = document.write;
-        document.write = function(html) {
-          if (typeof html === 'string') {
-            // 替换所有中文引号、逗号等为英文
-            html = html.replace(/“|”|‘|’|，|；|：|。/g, (match) => {
-              switch (match) {
-                case '“': case '”': return '"';
-                case '‘': case '’': return "'";
-                case '，': return ',';
-                case '；': return ';';
-                case '：': return ':';
-                case '。': return '.';
-                default: return '';
-              }
-            });
-          }
-          originalWrite.call(document, html);
-        };
-      })();
-    </script>
+
   </head>
   <body>
     <div id="root"></div>

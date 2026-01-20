@@ -27,11 +27,10 @@ export const generateCodeFromPrompt = async (prompt: string): Promise<string> =>
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
+      model: 'gemini-1.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        systemInstruction: systemPrompt,
-        thinkingConfig: { thinkingBudget: 0 } 
+        systemInstruction: systemPrompt
       }
     });
 
