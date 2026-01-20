@@ -15,6 +15,12 @@ function App() {
   const [isLandscape, setIsLandscape] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  
+  // 用于可拖动分割线的状态和refs
+  const [editorWidth, setEditorWidth] = useState<number>(50); // 编辑器宽度百分比
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Debounce the preview update slightly to avoid rapid iframe flashing on every keystroke
   useEffect(() => {
@@ -90,6 +96,40 @@ function App() {
     };
   }, []);
 
+  // 可拖动分割线相关事件处理
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleDrag = (e: MouseEvent) => {
+    if (!isDragging || !containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const containerWidth = containerRect.width;
+    const x = e.clientX - containerRect.left;
+    
+    // 计算编辑器宽度百分比，限制在10%到90%之间
+    const newWidth = Math.max(10, Math.min(90, (x / containerWidth) * 100));
+    setEditorWidth(newWidth);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // 添加和移除鼠标事件监听器
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleDrag);
+      document.addEventListener('mouseup', handleDragEnd);
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleDrag);
+      document.removeEventListener('mouseup', handleDragEnd);
+    };
+  }, [isDragging]);
+
   return (
     <div className={`flex flex-col h-screen bg-gray-950 text-white overflow-hidden font-sans ${isFullscreen ? 'hidden' : ''}`}>
       
@@ -105,10 +145,13 @@ function App() {
       />
 
       {/* Main Workspace */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div ref={containerRef} className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         
         {/* Left: Editor Pane */}
-        <div className="h-1/2 lg:h-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-800 flex flex-col">
+        <div 
+          className="h-1/2 lg:h-full border-b lg:border-b-0 border-gray-800 flex flex-col"
+          style={{ width: isDragging ? 'auto' : `${editorWidth}%`, minWidth: '10%', maxWidth: '90%' }}
+        >
           <Editor 
             code={code} 
             onChange={setCode} 
@@ -116,8 +159,33 @@ function App() {
           />
         </div>
 
+        {/* Draggable Resizer */}
+        <div
+          ref={dragRef}
+          className="h-1 lg:h-full w-full lg:w-1 bg-gray-700 cursor-col-resize flex-shrink-0"
+          onMouseDown={handleDragStart}
+          style={{
+            backgroundColor: isDragging ? '#3b82f6' : '#374151',
+            transition: isDragging ? 'none' : 'background-color 0.2s ease',
+            cursor: 'col-resize',
+            position: 'relative'
+          }}
+        >
+          {/* 拖动提示线 */}
+          {isDragging && (
+            <div 
+              className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-50"
+              style={{ left: '50%', transform: 'translateX(-50%)' }}
+            />
+          )}
+        </div>
+
         {/* Right: Preview Pane */}
-        <div ref={previewRef} className="h-1/2 lg:h-full lg:w-1/2 relative bg-[#121212]">
+        <div 
+          ref={previewRef} 
+          className="h-1/2 lg:h-full bg-[#121212] flex flex-col"
+          style={{ flex: 1, minWidth: '10%', maxWidth: '90%' }}
+        >
           <PreviewFrame 
             code={previewCode} 
             device={currentDevice}
