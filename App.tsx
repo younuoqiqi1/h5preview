@@ -131,61 +131,82 @@ function App() {
   }, [isDragging]);
 
   return (
-    <div className={`flex flex-col h-screen bg-gray-950 text-white overflow-hidden font-sans ${isFullscreen ? 'hidden' : ''}`}>
-      
+    <div className="flex flex-col h-screen bg-gray-950 text-white overflow-hidden font-sans">
       {/* Top Toolbar */}
-      <Toolbar 
-        currentDevice={currentDevice}
-        onDeviceChange={handleDeviceChange}
-        isLandscape={isLandscape}
-        toggleOrientation={() => setIsLandscape(!isLandscape)}
-        onRefreshClick={handleRefresh}
-        onSaveClick={handleSave}
-        onFullscreenClick={handleFullscreen}
-      />
+      {!isFullscreen && (
+        <Toolbar 
+          currentDevice={currentDevice}
+          onDeviceChange={handleDeviceChange}
+          isLandscape={isLandscape}
+          toggleOrientation={() => setIsLandscape(!isLandscape)}
+          onRefreshClick={handleRefresh}
+          onSaveClick={handleSave}
+          onFullscreenClick={handleFullscreen}
+        />
+      )}
 
       {/* Main Workspace */}
       <div ref={containerRef} className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        
-        {/* Left: Editor Pane */}
-        <div 
-          className="h-1/2 lg:h-full border-b lg:border-b-0 border-gray-800 flex flex-col"
-          style={{ width: isDragging ? 'auto' : `${editorWidth}%`, minWidth: '10%', maxWidth: '90%' }}
-        >
-          <Editor 
-            code={code} 
-            onChange={setCode} 
-            onClear={handleClear}
-          />
-        </div>
-
-        {/* Draggable Resizer */}
-        <div
-          ref={dragRef}
-          className="h-1 lg:h-full w-full lg:w-1 bg-gray-700 cursor-col-resize flex-shrink-0"
-          onMouseDown={handleDragStart}
-          style={{
-            backgroundColor: isDragging ? '#3b82f6' : '#374151',
-            transition: isDragging ? 'none' : 'background-color 0.2s ease',
-            cursor: 'col-resize',
-            position: 'relative'
-          }}
-        >
-          {/* 拖动提示线 */}
-          {isDragging && (
+        {/* 非全屏模式下显示编辑器和分割线 */}
+        {!isFullscreen && (
+          <>
+            {/* Left: Editor Pane */}
             <div 
-              className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-50"
-              style={{ left: '50%', transform: 'translateX(-50%)' }}
-            />
-          )}
-        </div>
+              className="h-1/2 lg:h-full border-b lg:border-b-0 border-gray-800 flex flex-col"
+              style={{ width: isDragging ? 'auto' : `${editorWidth}%`, minWidth: '10%', maxWidth: '90%' }}
+            >
+              <Editor 
+                code={code} 
+                onChange={setCode} 
+                onClear={handleClear}
+              />
+            </div>
+
+            {/* Draggable Resizer */}
+            <div
+              ref={dragRef}
+              className="h-1 lg:h-full w-full lg:w-1 bg-gray-700 cursor-col-resize flex-shrink-0"
+              onMouseDown={handleDragStart}
+              style={{
+                backgroundColor: isDragging ? '#3b82f6' : '#374151',
+                transition: isDragging ? 'none' : 'background-color 0.2s ease',
+                cursor: 'col-resize',
+                position: 'relative'
+              }}
+            >
+              {/* 拖动提示线 */}
+              {isDragging && (
+                <div 
+                  className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-50"
+                  style={{ left: '50%', transform: 'translateX(-50%)' }}
+                />
+              )}
+            </div>
+          </>
+        )}
 
         {/* Right: Preview Pane */}
         <div 
           ref={previewRef} 
-          className="h-1/2 lg:h-full bg-[#121212] flex flex-col"
-          style={{ flex: 1, minWidth: '10%', maxWidth: '90%' }}
+          className={`bg-[#121212] flex flex-col ${isFullscreen ? '' : 'h-1/2 lg:h-full flex-1'}`}
+          style={{
+            ...(!isFullscreen ? { minWidth: '10%', maxWidth: '90%' } : {}),
+            backgroundColor: '#121212'
+          }}
         >
+          {/* 全屏模式下的退出按钮 */}
+          {isFullscreen && (
+            <button
+              onClick={handleFullscreen}
+              className="absolute top-4 right-4 p-2 bg-gray-900/80 hover:bg-gray-800 text-white rounded-full shadow-lg z-50"
+              title="Exit Fullscreen"
+              style={{ backdropFilter: 'blur(8px)' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          )}
           <PreviewFrame 
             code={previewCode} 
             device={currentDevice}
@@ -193,9 +214,7 @@ function App() {
             refreshTrigger={refreshTrigger}
           />
         </div>
-
       </div>
-
     </div>
   );
 }
