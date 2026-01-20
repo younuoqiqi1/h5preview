@@ -8,9 +8,9 @@ interface ToolbarProps {
   onDeviceChange: (device: Device) => void;
   isLandscape: boolean;
   toggleOrientation: () => void;
-  onGenerateClick: () => void;
   onRefreshClick: () => void;
   onSaveClick: () => void;
+  onFullscreenClick: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({ 
@@ -18,9 +18,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onDeviceChange, 
   isLandscape, 
   toggleOrientation,
-  onGenerateClick,
   onRefreshClick,
-  onSaveClick
+  onSaveClick,
+  onFullscreenClick
 }) => {
 
   const getIcon = (type: DeviceType) => {
@@ -98,11 +98,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </button>
 
         <button 
-          onClick={onGenerateClick}
-          className="ml-2 flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white text-xs font-semibold rounded-md shadow-lg transition-all transform hover:scale-105"
+          onClick={onFullscreenClick}
+          className="ml-2 flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-400 hover:to-cyan-500 text-white text-xs font-semibold rounded-md shadow-lg transition-all transform hover:scale-105"
+          title="Fullscreen Preview"
         >
-          <Wand2 size={14} />
-          <span>Ask AI</span>
+          <Monitor size={14} />
+          <span>Fullscreen</span>
         </button>
       </div>
     </div>

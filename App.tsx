@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Toolbar from './components/Toolbar';
 import Editor from './components/Editor';
 import PreviewFrame from './components/PreviewFrame';
-import AIGenerator from './components/AIGenerator';
 import { DEVICES, DEFAULT_CODE } from './constants';
 import { Device } from './types';
 
@@ -14,7 +13,8 @@ function App() {
   
   const [currentDevice, setCurrentDevice] = useState<Device>(DEVICES[7]); // Default to responsive
   const [isLandscape, setIsLandscape] = useState(false);
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   // Debounce the preview update slightly to avoid rapid iframe flashing on every keystroke
   useEffect(() => {
@@ -51,8 +51,47 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleFullscreen = () => {
+    if (!isFullscreen && previewRef.current) {
+      // Enter fullscreen
+      if (previewRef.current.requestFullscreen) {
+        previewRef.current.requestFullscreen();
+      } else if ((previewRef.current as any).webkitRequestFullscreen) {
+        (previewRef.current as any).webkitRequestFullscreen();
+      } else if ((previewRef.current as any).msRequestFullscreen) {
+        (previewRef.current as any).msRequestFullscreen();
+      }
+    } else {
+      // Exit fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
+      }
+    }
+  };
+
+  // Listen for fullscreen change events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-white overflow-hidden font-sans">
+    <div className={`flex flex-col h-screen bg-gray-950 text-white overflow-hidden font-sans ${isFullscreen ? 'hidden' : ''}`}>
       
       {/* Top Toolbar */}
       <Toolbar 
@@ -60,9 +99,9 @@ function App() {
         onDeviceChange={handleDeviceChange}
         isLandscape={isLandscape}
         toggleOrientation={() => setIsLandscape(!isLandscape)}
-        onGenerateClick={() => setIsAIModalOpen(true)}
         onRefreshClick={handleRefresh}
         onSaveClick={handleSave}
+        onFullscreenClick={handleFullscreen}
       />
 
       {/* Main Workspace */}
@@ -78,7 +117,7 @@ function App() {
         </div>
 
         {/* Right: Preview Pane */}
-        <div className="h-1/2 lg:h-full lg:w-1/2 relative bg-[#121212]">
+        <div ref={previewRef} className="h-1/2 lg:h-full lg:w-1/2 relative bg-[#121212]">
           <PreviewFrame 
             code={previewCode} 
             device={currentDevice}
@@ -88,13 +127,6 @@ function App() {
         </div>
 
       </div>
-
-      {/* AI Modal */}
-      <AIGenerator 
-        isOpen={isAIModalOpen} 
-        onClose={() => setIsAIModalOpen(false)}
-        onCodeGenerated={(newCode) => setCode(newCode)}
-      />
 
     </div>
   );
