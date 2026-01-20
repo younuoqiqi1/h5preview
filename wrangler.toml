@@ -1,0 +1,36 @@
+# ================= 基础配置（必选）=================
+name = "h5preview"  # 项目名，必须和你的 Cloudflare 项目名一致（建议和仓库名相同）
+main = "index.js"   # 入口文件：AI Studio 同步的代码通常是 index.js/main.js，根据实际文件名修改
+compatibility_date = "2026-01-01"  # 兼容日期（填最近3个月内的日期即可，Cloudflare 会适配对应版本特性）
+compatibility_flags = ["nodejs_compat"]  # 启用 Node.js 兼容模式（AI Studio 项目常依赖 Node 模块，避免报错）
+
+# ================= 环境配置（可选，根据需求添加）=================
+[env.production]  # 生产环境配置（部署时可选择）
+workers_dev = false  # 关闭 workers.dev 临时域名，使用自定义域名（如果已配置）
+route = "https://你的自定义域名/*"  # 绑定自定义域名（需先在 Cloudflare 解析域名）
+
+[env.test]  # 测试环境配置（可选）
+workers_dev = true  # 启用 workers.dev 临时域名，用于测试
+
+# ================= 构建配置（适配 AI Studio 静态资源/依赖）=================
+[build]
+command = ""  # AI Studio 项目无需额外构建命令，留空即可（如果需要安装依赖，可填 "npm install"）
+cwd = "."     # 构建目录（默认根目录）
+watch_dir = ["src", "public"]  # 监听变化的目录（AI Studio 同步的静态文件可放 public 文件夹）
+
+# ================= 静态资源配置（如果项目有 HTML/CSS/图片等静态文件）=================
+[static_dirs]
+"public" = "public"  # 映射 public 文件夹为静态资源目录（访问 https://域名/xxx 即可获取 public/xxx 文件）
+
+# ================= 变量配置（可选，存储密钥/配置项）=================
+[vars]
+# AI_API_KEY = "your-ai-api-key"  # 示例：如果需要调用 AI 接口，可在这里配置环境变量（部署后在 Cloudflare 后台也能修改）
+# DEBUG = false  # 调试模式开关
+
+# ================= 高级配置（可选，解决常见问题）=================
+[experimental]
+enable_single_js_file = true  # 支持单文件脚本（AI Studio 同步的代码多为单文件，避免解析报错）
+
+# 如果项目依赖较大的 npm 包，添加以下配置（可选）
+[build.upload]
+format = "service-worker"  # 上传格式（适配复杂依赖）
