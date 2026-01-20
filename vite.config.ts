@@ -5,45 +5,91 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    // 开发服务器配置（本地开发用，不影响Cloudflare部署）
     server: {
       port: 3000,
       host: '0.0.0.0',
     },
-    // 核心插件：启用React编译，处理TSX/JSX语法（解决语法错误关键）
-    plugins: [react()],
-    // 环境变量配置（保持你原有的API_KEY配置，修复重复定义问题）
+    plugins: [
+      // 增强React编译，用Babel兜底转译（解决TSX/JSX语法问题）
+      react({
+        babel: {
+          presets: [
+            ['@babel/preset-env', { targets: '> 0.25%, not dead' }],
+            '@babel/preset-react',
+            '@babel/preset-typescript',
+          ],
+        },
+      }),
+      // 自动替换所有中文符号（彻底解决语法错误）
+      {
+        name: 'replace-chinese-symbols',
+        transformIndexHtml(html) {
+          // 替换中文引号、逗号、分号等为英文
+          return html.replace(/“|”|‘|’|，|；|：|。/g, (match) => {
+            switch (match) {
+              case '“': case '”': return '"';
+              case '‘': case '’': return "'";
+              case '，': return ',';
+              case '；': return ';';
+              case '：': return ':';
+              case '。': return '.';
+              default: return '';
+            }
+          });
+        },
+        transform(code) {
+          // 替换所有代码文件中的中文符号
+          return code.replace(/“|”|‘|’|，|；|：|。/g, (match) => {
+            switch (match) {
+              case '“': case '”': return '"';
+              case '‘': case '’': return "'";
+              case '，': return ',';
+              case '；': return ';';
+              case '：': return ':';
+              case '。': return '.';
+              default: return '';
+            }
+          });
+        },
+      },
+    ],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
     },
-    // 路径别名配置（保持原有逻辑）
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
-      // 明确解析后缀，避免Cloudflare构建时找不到文件
       extensions: ['.tsx', '.ts', '.js', '.jsx', '.json'],
     },
-    // Cloudflare部署关键配置：强制转译兼容语法
+    // 本地预构建所有依赖（避免CDN冲突）
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'lucide-react',
+        '@google/genai',
+      ],
+    },
     build: {
-      // 转译为所有现代浏览器兼容的ES版本（解决语法错误）
-      target: 'es2015',
-      // 用esbuild强制处理TSX/TS文件，确保编译完整
+      target: 'es2020', // 适配ESM模块，兼容所有现代浏览器
       esbuild: {
-        loader: 'tsx', // 优先处理TSX文件
-        target: 'es2015', // 统一转译目标版本
+        loader: {
+          '.ts': 'ts',
+          '.tsx': 'tsx',
+          '.js': 'js',
+          '.jsx': 'jsx',
+        },
+        target: 'es2020',
+        minifySyntax: true, // 压缩语法，移除无效符号
       },
-      // 优化构建产物，避免冗余代码
       rollupOptions: {
         output: {
-          manualChunks: undefined, // 合并代码块，减少文件数量
+          format: 'esm',
+          manualChunks: undefined, // 合并代码块，减少加载错误
         },
       },
-    },
-    // 其他优化配置
-    optimizeDeps: {
-      // 预构建依赖，加快构建速度
-      include: ['react', 'react-dom', 'axios'], // 按需添加你的项目依赖
+      sourcemap: true, // 方便调试（可选，部署后可关闭）
     },
   };
 });
